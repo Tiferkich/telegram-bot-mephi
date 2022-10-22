@@ -5,21 +5,21 @@ from tokens import token
 
 bot=telebot.TeleBot(token)
 def id_in_sql(telegram_id):
-#try:
-    connector=sqlite3.connect("telegram.db")
-    cursor=connector.cursor()
-    cursor.execute("SELECT * FROM 'users'")
-    mas=cursor.fetchall()
-    if not(any([i[0]==str(telegram_id) for i in mas])):
-        cursor.execute("INSERT INTO users VALUES (?, ?)", (telegram_id, 1))
-    else:
-        cursor.execute("UPDATE users SET status = ? WHERE telegram = ?", (1, telegram_id))
-    connector.commit()
-#except sqlite3.Error as error:
-    #print("Error:",error)    
-#finally:
-    cursor.close()
-    connector.close()
+    try:
+        connector=sqlite3.connect("telegram.db")
+        cursor=connector.cursor()
+        cursor.execute("SELECT * FROM 'users'")
+        mas=cursor.fetchall()
+        if not(any([i[0]==str(telegram_id) for i in mas])):
+            cursor.execute("INSERT INTO users VALUES (?, ?)", (telegram_id, 1))
+        else:
+            cursor.execute("UPDATE users SET status = ? WHERE telegram = ?", (1, telegram_id))
+        connector.commit()
+    except sqlite3.Error as error:
+        print("Error:",error)    
+    finally:
+        cursor.close()
+        connector.close()
 
 def get_status(message):
     try:
@@ -47,21 +47,21 @@ def update_status(telegram_id, new_status):
         connector.close()
 
 def add_word(telegram_id, new_word):
-#try:
-    connector=sqlite3.connect("telegram.db")
-    cursor=connector.cursor()
-    cursor.execute("SELECT * FROM 'words'")
-    mas=cursor.fetchall()
-    if not(any([i[0]==str(telegram_id) for i in mas])):
-        cursor.execute("INSERT INTO words VALUES (?, ?)", (telegram_id, new_word))
-    else:
-        cursor.execute("UPDATE words SET user_word = ? WHERE telegram = ?", (new_word, telegram_id))
-    connector.commit()
-#except sqlite3.Error as error:
-    #print("Error:",error)    
-#finally:
-    cursor.close()
-    connector.close()
+    try:
+        connector=sqlite3.connect("telegram.db")
+        cursor=connector.cursor()
+        cursor.execute("SELECT * FROM 'words'")
+        mas=cursor.fetchall()
+        if not(any([i[0]==str(telegram_id) for i in mas])):
+            cursor.execute("INSERT INTO words VALUES (?, ?)", (telegram_id, new_word))
+        else:
+            cursor.execute("UPDATE words SET user_word = ? WHERE telegram = ?", (new_word, telegram_id))
+        connector.commit()
+    except sqlite3.Error as error:
+        print("Error:",error)    
+    finally:
+        cursor.close()
+        connector.close()
 
 @bot.message_handler(commands=['start'])
 def hello(message):
