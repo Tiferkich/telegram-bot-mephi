@@ -1,4 +1,3 @@
-*.pyc
+db_test.py
+telegram1.db
 __pycache__
-.idea
-tokens.py
