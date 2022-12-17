@@ -2,3 +2,8 @@ db_test.py
 telegram1.db
 __pycache__
 tokens.py
+parser_test.py
+telegram_bot.py
+telegram1.sqbpro
+.vscode
+parser_classes.py
