@@ -67,7 +67,7 @@ def add_word(telegram_id, new_word):
         cursor.execute("SELECT * FROM words")
         mas=cursor.fetchall()
         if not(any([i[0]==str(telegram_id) for i in mas])):
-            cursor.execute("INSERT INTO words (telegram_id,user_word) VALUES (%s, %s)", (telegram_id, new_word,))
+            cursor.execute("INSERT INTO words (telegram_id,user_word) VALUES (%s, %s)", (telegram_id, new_word))
         else:
             cursor.execute("UPDATE words SET user_word=%s WHERE telegram_id=%s", (str(new_word), str(telegram_id)))
         connector.commit()
@@ -96,8 +96,8 @@ def list_of_words(telegram_id):
     try:
         connector=con_to_bs()
         cursor = connector.cursor()
-        cursor.execute("SELECT user_word FROM words")
-        mas=str(cursor.fetchall()[0])[2:-3].split(',')
+        cursor.execute("SELECT * FROM words WHERE telegram_id=%s", (str(telegram_id)))
+        mas=cursor.fetchall()[1]
         return mas
     except psycopg2.Error as error:
         print("Error:", error)
@@ -119,9 +119,9 @@ def handle_confirmation(message):
     except:
         pass
     finally:
-        bot.send_message(message.chat.id, text="I can help you get articles urls from chinese"
-                                           " sites where key words found. \n"
-                                           'You can control me by sending these commands:\n'
+        bot.send_message(message.chat.id, text="I can help you to find information based "
+                                               "on your keywords on Chinese sites. \n"
+                                           'You can manage me by sending these commands:\n'
                                            '\n'
                                            '/options - display options\n'
                      )
@@ -139,9 +139,9 @@ def handle_help(message):
     telegram_id = message.chat.id
     update_status(telegram_id, "WORDS")
     keyboard = create_options_keyboard()
-    bot.send_message(message.chat.id, text="I can help you get articles urls from "
-                                               "chinese sites where key words found. \n"
-                                               'You can control me by using this buttons below\n',
+    bot.send_message(message.chat.id, text="I can help you to find information based "
+                                               "on your keywords on Chinese sites. \n"
+                                               'You can manage me by using buttons below\n',
                          reply_markup=keyboard)
 
 
@@ -154,8 +154,8 @@ def options_callback_handler(callback_query):
     if current_state=="START" or current_state=="WORDS" and text=='WORDS':
         bot.send_message(message.chat.id, text='Write new key word')
     elif text=="VIEW_KEY_WORDS" and (current_state=="START" or current_state=="WORDS"):
-        try:bot.send_message(message.chat.id, text="SPISOK OF WORDS:  "+str(list_of_words(telegram_id)))
-        except: bot.send_message(message.chat.id, text="SPISOK PUST")
+        bot.send_message(message.chat.id, text="LIST OF WORDS:  "+list_of_words(telegram_id))
+        bot.send_message(message.chat.id, text="LIST IS EMPTY")
     elif text=="DELETE_KEY_WORDS" and current_state=="START" or current_state=="WORDS":
         delete_users_key_words(message)
         bot.send_message(message.chat.id, text='WORDS WERE DELETED')
