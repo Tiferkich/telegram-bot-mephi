@@ -69,10 +69,14 @@ def add_word(telegram_id, new_word):
         if not(any([i[0]==str(telegram_id) for i in mas])):
             cursor.execute("INSERT INTO words (telegram_id,user_word) VALUES (%s, %s)", (telegram_id, new_word))
         else:
-            cursor.execute("UPDATE words SET user_word=%s WHERE telegram_id=%s", (str(new_word), str(telegram_id)))
+            cursor.execute("SELECT user_word FROM words WHERE telegram_id=%s", ([str(telegram_id)]))
+            mas = list(cursor.fetchone())
+            mas+=[new_word]
+            cursor.execute("DELETE FROM words WHERE telegram_id=%s", ([str(telegram_id)]))
+            cursor.execute("INSERT INTO words (telegram_id,user_word) VALUES (%s, %s)", (telegram_id, ",".join(mas),))
         connector.commit()
     except psycopg2.Error as error:
-        print("Error:",error)    
+        print("Error:",error)
     finally:
         connector.commit()
         cursor.close()
@@ -168,6 +172,7 @@ def handle_adding_word(message):
         add_word(telegram_id, message.text)
         update_status(telegram_id, "WORDS")
         bot.send_message(telegram_id, "Your word is added")
+
     else:
         bot.send_message(message.chat.id, text='This is not a text message. Please try again')
 
