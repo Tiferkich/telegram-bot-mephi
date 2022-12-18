@@ -2,34 +2,32 @@ import gc
 import datetime
 import os
 import psutil
-import pymysql
+import psycopg2
 import telebot
+from tokens import token,URL
 from telebot import types
 
 from parser_classes import SpaceChinaParser, jqkaParser, SpaceFlightsFansParser, sipprParser, TiebaBaiduParser
 
-DB_USER = <DB_USER>
-DB_PASSWORD = <DB_PASSWORD>
-DB_HOST = <DB_HOST>
-DB_NAME = < DB_NAME >
+def con_to_bs():
+    connector = psycopg2.connect(URL)
+    return connector
+
 
 
 def create_r_search_string(list_of_key_words):
     return r'|'.join(map(lambda x: f"({x})", list_of_key_words))
 
-
-token = <telegram_bot_token>
 START, WORDS, PARSER_CHOOSE, PARSING_IN_PROGRESS = range(4)
 DELETE_KEY_WORDS = 100
 VIEW_KEY_WORDS = 101
-VIEW_MEMORY_USAGE = 102
+#VIEW_MEMORY_USAGE = 102
 
 SITES_PARSERS = {'China Aerospace Science and Technology Corporation': SpaceChinaParser,
                  'Space Flight Fans': SpaceFlightsFansParser, '10jqka': jqkaParser,
                  'SIPPR': sipprParser, 'Tieba Baidu': TiebaBaiduParser}
 OPTION_BUTTONS = {'ADD NEW KEY WORD': WORDS, 'CHOOSE SITE TO PARSE': PARSER_CHOOSE,
-                  'VIEW KEY WORDS': VIEW_KEY_WORDS, 'DELETE ALL KEY WORDS': DELETE_KEY_WORDS,
-                  'VIEW MEMORY USAGE': VIEW_MEMORY_USAGE}
+                  'VIEW KEY WORDS': VIEW_KEY_WORDS, 'DELETE ALL KEY WORDS': DELETE_KEY_WORDS}#,'VIEW MEMORY USAGE': VIEW_MEMORY_USAGE
 
 
 def create_r_search_string(list_of_key_words):
@@ -38,9 +36,7 @@ def create_r_search_string(list_of_key_words):
 
 def create_new_user(message):
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         add_user = ("INSERT INTO user"
                     "(id, state, insert_date, change_date)"
@@ -58,9 +54,7 @@ def create_new_user(message):
 
 def get_state(message):
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         query = "SELECT * FROM user WHERE id=%s"
         id = message.chat.id
@@ -75,9 +69,7 @@ def get_state(message):
 
 def update_state(message, state):
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         id = message.chat.id
         query = "UPDATE user SET state = %s, change_date = %s WHERE id = %s"
@@ -92,9 +84,7 @@ def update_state(message, state):
 
 def update_state_after_crash():
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         query = "UPDATE user SET state = %s, change_date = %s"
         values = (START, datetime.datetime.now())
@@ -108,9 +98,7 @@ def update_state_after_crash():
 
 def get_users_chat_id_after_crash():
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         query = "SELECT id from user where state = %s"
         values = PARSING_IN_PROGRESS
@@ -127,9 +115,7 @@ def get_users_chat_id_after_crash():
 
 def add_key_word_for_user(message, key_word: str):
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
         cursor = cnx.cursor()
         add_user = ("INSERT INTO user_key_word"
                     "(user_id, key_word, insert_date)"
@@ -147,9 +133,7 @@ def add_key_word_for_user(message, key_word: str):
 
 def list_current_key_words(message):
     try:
-        cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                              host=DB_HOST,
-                              database=DB_NAME)
+        cnx = con_to_bs()
 
         cursor = cnx.cursor()
         query = 'SELECT key_word FROM user_key_word WHERE user_id = %s ORDER BY insert_date ASC'
@@ -166,9 +150,7 @@ def list_current_key_words(message):
 
 
 def delete_users_key_words(message):
-    cnx = pymysql.connect(user=DB_USER, password=DB_PASSWORD,
-                          host=DB_HOST,
-                          database=DB_NAME)
+    cnx = con_to_bs()
 
     cursor = cnx.cursor()
 
@@ -235,9 +217,9 @@ def options_callback_handler(callback_query):
     if current_state in [START, WORDS] and int(text) == WORDS:
         bot.send_message(message.chat.id, text='Write new key word')
         update_state(message, WORDS)
-    elif int(text) == VIEW_MEMORY_USAGE:
-        process = psutil.Process(os.getpid())
-        bot.send_message(message.chat.id, text=f'{process.memory_info().rss / (1024 ** 2)} MB')
+    #elif int(text) == VIEW_MEMORY_USAGE:
+        #process = psutil.Process(os.getpid())
+        #bot.send_message(message.chat.id, text=f'{process.memory_info().rss / (1024 ** 2)} MB')
 
     elif current_state in [START, WORDS, PARSER_CHOOSE] and int(text) == PARSER_CHOOSE:
         key_words = list_current_key_words(message)
@@ -320,7 +302,7 @@ def sites_callback_handler(callback_query):
 
 
 user_id_after_crash = get_users_chat_id_after_crash()
-for chat_id in user_id_after_crash:
-    bot.send_message(chat_id, text='We are sorry. We had to restart the bot. Try running your parser again.')
+#for chat_id in user_id_after_crash:
+#    bot.send_message(chat_id, text='We are sorry. We had to restart the bot. Try running your parser again.')
 update_state_after_crash()
 bot.polling()
