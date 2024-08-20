@@ -1,4 +1,4 @@
-# dodiki
+# members
 
 Members:
 1. Denis Lian
